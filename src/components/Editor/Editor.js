@@ -1,8 +1,13 @@
 import React from "react";
-import { Editor, EditorState, RichUtils } from "draft-js";
+import {
+  Editor,
+  EditorState,
+  RichUtils,
+  Modifier,
+  SelectionState,
+} from "draft-js";
 import "./Editor.css";
 
-// custom styles
 const styleMap = {
   BOLD: {
     fontWeight: "bold",
@@ -16,51 +21,76 @@ const styleMap = {
 };
 
 const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
-  // Function to determine the block type or inline style based on the starting text of a block
   const handleBlockConversion = (blockText) => {
     if (blockText.startsWith("# ") && blockText.length === 2) {
-      return "header-one"; // Convert to H1 heading
+      return "header-one";
     } else if (blockText.startsWith("* ") && blockText.length === 2) {
-      return "BOLD"; // Custom type to remove "* "
+      return "BOLD";
     } else if (blockText.startsWith("** ") && blockText.length === 3) {
-      return "RED_COLOR"; // Custom type to change text color to red for "** "
+      return "RED_COLOR";
     } else if (blockText.startsWith("*** ") && blockText.length === 4) {
-      return "UNDERLINE_STYLE"; // Custom type for underline styling for "*** "
+      return "UNDERLINE_STYLE";
     }
-    return null; // No conversion
+    return null;
   };
 
-  // Function to handle changes in the editor content
   const handleEditorChange = (newEditorState) => {
-    const contentState = newEditorState.getCurrentContent();
-    const blockMap = contentState.getBlockMap();
     let updatedEditorState = newEditorState;
+    const contentState = updatedEditorState.getCurrentContent();
+    const blockMap = contentState.getBlockMap();
 
     blockMap.forEach((contentBlock, blockKey) => {
       const blockText = contentBlock.getText();
       const blockType = handleBlockConversion(blockText);
 
       if (blockType) {
-        if (blockType === "BOLD") {
-          // Remove "* " from the text
+        if (blockType === "header-one") {
+          // Update block type and text for header-one
           const newContentState = contentState.merge({
             blockMap: contentState.getBlockMap().set(
               blockKey,
               contentBlock.merge({
-                type: "unstyled",
-                text: blockText.substring(2), // Exclude the "* "
+                type: blockType,
+                text: blockText.substring(2),
               })
             ),
           });
 
-          // Push the updated content state to the editor state
+          // Push updated content state
           updatedEditorState = EditorState.push(
             updatedEditorState,
             newContentState,
             "change-block-type"
           );
+        } else if (blockType === "BOLD") {
+          // Remove "* " from the text for BOLD
+          const newContentState = Modifier.replaceText(
+            contentState,
+            new SelectionState({
+              anchorKey: blockKey,
+              anchorOffset: 0,
+              focusKey: blockKey,
+              focusOffset: blockText.length,
+            }),
+            blockText.substring(2)
+          );
 
-          // Reset the selection to the end of the converted block
+          // Update block type for BOLD
+          updatedEditorState = EditorState.push(
+            updatedEditorState,
+            newContentState.merge({
+              blockMap: newContentState.getBlockMap().set(
+                blockKey,
+                contentBlock.merge({
+                  type: "unstyled",
+                  text: blockText.substring(2),
+                })
+              ),
+            }),
+            "change-block-type"
+          );
+
+          // Reset the selection for BOLD
           updatedEditorState = EditorState.forceSelection(
             updatedEditorState,
             updatedEditorState.getSelection().merge({
@@ -69,45 +99,60 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
             })
           );
 
-          // Apply BOLD style using RichUtils
+          // Apply BOLD style
           updatedEditorState = RichUtils.toggleInlineStyle(
             updatedEditorState,
             "BOLD"
-          );
-        } else if (blockType === "header-one") {
-          // Update the block type and text for headers (H1) or other block types
-          const newContentState = contentState.merge({
-            blockMap: contentState.getBlockMap().set(
-              blockKey,
-              contentBlock.merge({
-                type: blockType,
-                text: blockText.substring(2), // Exclude the "# " or "* "
-              })
-            ),
-          });
-
-          // Push the updated content state to the editor state
-          updatedEditorState = EditorState.push(
-            updatedEditorState,
-            newContentState,
-            "change-block-type"
           );
         } else if (
           blockType === "RED_COLOR" ||
           blockType === "UNDERLINE_STYLE"
         ) {
-          // Apply custom styles using inline style
-          const selection = contentState.getSelectionAfter();
+          // Remove the markers from the text for RED_COLOR or UNDERLINE_STYLE
+          const newContentState = Modifier.replaceText(
+            contentState,
+            new SelectionState({
+              anchorKey: blockKey,
+              anchorOffset: 0,
+              focusKey: blockKey,
+              focusOffset: blockText.length,
+            }),
+            blockText.substring(3)
+          );
+
+          // Update block type for RED_COLOR or UNDERLINE_STYLE
+          updatedEditorState = EditorState.push(
+            updatedEditorState,
+            newContentState.merge({
+              blockMap: newContentState.getBlockMap().set(
+                blockKey,
+                contentBlock.merge({
+                  type: "unstyled",
+                  text: blockText.substring(3),
+                })
+              ),
+            }),
+            "change-block-type"
+          );
+
+          // Reset the selection for RED_COLOR or UNDERLINE_STYLE
+          updatedEditorState = EditorState.forceSelection(
+            updatedEditorState,
+            updatedEditorState.getSelection().merge({
+              anchorOffset: blockText.length - 3,
+              focusOffset: blockText.length - 3,
+            })
+          );
+
+          // Apply custom styles for RED_COLOR or UNDERLINE_STYLE
           updatedEditorState = RichUtils.toggleInlineStyle(
             updatedEditorState,
-            blockType,
-            selection
+            blockType
           );
         }
       }
     });
 
-    // Call the callback function to update the parent component's state
     onEditorChange(updatedEditorState);
   };
 
