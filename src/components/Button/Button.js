@@ -1,11 +1,16 @@
 import React from "react";
 import "./Button.css";
 
-const Button = ({ onClick, label }) => {
+const Button = () => {
+  const handleSave = () => {
+    // Add your save logic here if needed
+    alert("Content saved!");
+  };
+
   return (
-    <div>
-      <button onClick={onClick}>{label}</button>
-    </div>
+    <button className="save-button" onClick={handleSave}>
+      Save
+    </button>
   );
 };
 
