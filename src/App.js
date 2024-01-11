@@ -8,7 +8,6 @@ import "./App.css";
 
 const App = () => {
   const [editorState, setEditorState] = useState(() => {
-    // Load content from local storage on component mount
     const savedContent = localStorage.getItem("editorContent");
     return savedContent
       ? EditorState.createWithContent(convertFromRaw(JSON.parse(savedContent)))
@@ -17,13 +16,6 @@ const App = () => {
 
   const handleEditorChange = (newEditorState) => {
     setEditorState(newEditorState);
-
-    // Save content to local storage on every change
-    const contentState = newEditorState.getCurrentContent();
-    localStorage.setItem(
-      "editorContent",
-      JSON.stringify(convertToRaw(contentState))
-    );
   };
 
   const handleKeyCommand = (command) => {
