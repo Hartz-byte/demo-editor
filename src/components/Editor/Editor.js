@@ -6,34 +6,29 @@ import {
   Modifier,
   SelectionState,
 } from "draft-js";
-import "./Editor.css";
 
+// custom styles for inline formatting
 const styleMap = {
-  BOLD: {
-    fontWeight: "bold",
-  },
-  RED_COLOR: {
-    color: "red",
-  },
-  UNDERLINE_STYLE: {
-    textDecoration: "underline",
-  },
+  BOLD: { fontWeight: "bold" },
+  RED_COLOR: { color: "red" },
+  UNDERLINE_STYLE: { textDecoration: "underline" },
 };
 
 const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
+  // function to determine the block type or inline style based on the starting text of a block
   const handleBlockConversion = (blockText) => {
-    if (blockText.startsWith("# ") && blockText.length === 2) {
+    if (blockText.startsWith("# ") && blockText.length === 2)
       return "header-one";
-    } else if (blockText.startsWith("* ") && blockText.length === 2) {
+    if (blockText.startsWith("* ") && blockText.length === 2)
       return "BOLD";
-    } else if (blockText.startsWith("** ") && blockText.length === 3) {
+    if (blockText.startsWith("** ") && blockText.length === 3)
       return "RED_COLOR";
-    } else if (blockText.startsWith("*** ") && blockText.length === 4) {
+    if (blockText.startsWith("*** ") && blockText.length === 4)
       return "UNDERLINE_STYLE";
-    }
     return null;
   };
 
+  // function to handle changes in the editor content
   const handleEditorChange = (newEditorState) => {
     let updatedEditorState = newEditorState;
     const contentState = updatedEditorState.getCurrentContent();
@@ -44,8 +39,8 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
       const blockType = handleBlockConversion(blockText);
 
       if (blockType) {
+        // handle header-one (h1)
         if (blockType === "header-one") {
-          // Update block type and text for header-one
           const newContentState = contentState.merge({
             blockMap: contentState.getBlockMap().set(
               blockKey,
@@ -55,60 +50,24 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
               })
             ),
           });
-
-          // Push updated content state
+          // update block type
           updatedEditorState = EditorState.push(
             updatedEditorState,
             newContentState,
             "change-block-type"
           );
-        } else if (blockType === "BOLD") {
-          // Remove "* " from the text for BOLD
-          const newContentState = Modifier.replaceText(
-            contentState,
-            new SelectionState({
-              anchorKey: blockKey,
-              anchorOffset: 0,
-              focusKey: blockKey,
-              focusOffset: blockText.length,
-            }),
-            blockText.substring(2)
-          );
+        }
 
-          // Update block type for BOLD
-          updatedEditorState = EditorState.push(
-            updatedEditorState,
-            newContentState.merge({
-              blockMap: newContentState.getBlockMap().set(
-                blockKey,
-                contentBlock.merge({
-                  type: "unstyled",
-                  text: blockText.substring(2),
-                })
-              ),
-            }),
-            "change-block-type"
-          );
-
-          // Reset the selection for BOLD
-          updatedEditorState = EditorState.forceSelection(
-            updatedEditorState,
-            updatedEditorState.getSelection().merge({
-              anchorOffset: blockText.length - 2,
-              focusOffset: blockText.length - 2,
-            })
-          );
-
-          // Apply BOLD style
-          updatedEditorState = RichUtils.toggleInlineStyle(
-            updatedEditorState,
-            "BOLD"
-          );
-        } else if (
+        // handle BOLD, RED_COLOR, and UNDERLINE_STYLE
+        else if (
+          blockType === "BOLD" ||
           blockType === "RED_COLOR" ||
           blockType === "UNDERLINE_STYLE"
         ) {
-          // Remove the markers from the text for RED_COLOR or UNDERLINE_STYLE
+          // determine the length of markers for BOLD or other styles
+          const markerLength = blockType === "BOLD" ? 2 : 3;
+
+          // remove the markers from the text
           const newContentState = Modifier.replaceText(
             contentState,
             new SelectionState({
@@ -117,10 +76,10 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
               focusKey: blockKey,
               focusOffset: blockText.length,
             }),
-            blockText.substring(3)
+            blockText.substring(markerLength)
           );
 
-          // Update block type for RED_COLOR or UNDERLINE_STYLE
+          // update block type
           updatedEditorState = EditorState.push(
             updatedEditorState,
             newContentState.merge({
@@ -128,23 +87,23 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
                 blockKey,
                 contentBlock.merge({
                   type: "unstyled",
-                  text: blockText.substring(3),
+                  text: blockText.substring(markerLength),
                 })
               ),
             }),
             "change-block-type"
           );
 
-          // Reset the selection for RED_COLOR or UNDERLINE_STYLE
+          // reset the selection
           updatedEditorState = EditorState.forceSelection(
             updatedEditorState,
             updatedEditorState.getSelection().merge({
-              anchorOffset: blockText.length - 3,
-              focusOffset: blockText.length - 3,
+              anchorOffset: blockText.length - markerLength,
+              focusOffset: blockText.length - markerLength,
             })
           );
 
-          // Apply custom styles for RED_COLOR or UNDERLINE_STYLE
+          // apply custom styles (BOLD, RED_COLOR, UNDERLINE_STYLE)
           updatedEditorState = RichUtils.toggleInlineStyle(
             updatedEditorState,
             blockType
