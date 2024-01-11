@@ -24,3 +24,9 @@ A simple React application using Draft.js for rich text editing. This project in
 ```bash
 git clone https://github.com/Hartz-byte/demo-editor.git
 cd demo-editor
+
+2. Install dependencies:
+npm install
+
+3. Start the project:
+npm start
