@@ -1,5 +1,19 @@
 import React from "react";
 import { Editor, EditorState, RichUtils } from "draft-js";
+import "./Editor.css";
+
+// custom styles
+const styleMap = {
+  BOLD: {
+    fontWeight: "bold",
+  },
+  RED_COLOR: {
+    color: "red",
+  },
+  UNDERLINE_STYLE: {
+    textDecoration: "underline",
+  },
+};
 
 const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
   // Function to determine the block type or inline style based on the starting text of a block
@@ -7,7 +21,11 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
     if (blockText.startsWith("# ") && blockText.length === 2) {
       return "header-one"; // Convert to H1 heading
     } else if (blockText.startsWith("* ") && blockText.length === 2) {
-      return "REMOVE_STAR"; // Custom type to remove "* "
+      return "BOLD"; // Custom type to remove "* "
+    } else if (blockText.startsWith("** ") && blockText.length === 3) {
+      return "RED_COLOR"; // Custom type to change text color to red for "** "
+    } else if (blockText.startsWith("*** ") && blockText.length === 4) {
+      return "UNDERLINE_STYLE"; // Custom type for underline styling for "*** "
     }
     return null; // No conversion
   };
@@ -16,13 +34,14 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
   const handleEditorChange = (newEditorState) => {
     const contentState = newEditorState.getCurrentContent();
     const blockMap = contentState.getBlockMap();
+    let updatedEditorState = newEditorState;
 
     blockMap.forEach((contentBlock, blockKey) => {
       const blockText = contentBlock.getText();
       const blockType = handleBlockConversion(blockText);
 
       if (blockType) {
-        if (blockType === "REMOVE_STAR") {
+        if (blockType === "BOLD") {
           // Remove "* " from the text
           const newContentState = contentState.merge({
             blockMap: contentState.getBlockMap().set(
@@ -35,24 +54,27 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
           });
 
           // Push the updated content state to the editor state
-          newEditorState = EditorState.push(
-            newEditorState,
+          updatedEditorState = EditorState.push(
+            updatedEditorState,
             newContentState,
             "change-block-type"
           );
 
           // Reset the selection to the end of the converted block
-          newEditorState = EditorState.forceSelection(
-            newEditorState,
-            newEditorState.getSelection().merge({
+          updatedEditorState = EditorState.forceSelection(
+            updatedEditorState,
+            updatedEditorState.getSelection().merge({
               anchorOffset: blockText.length - 2,
               focusOffset: blockText.length - 2,
             })
           );
 
           // Apply BOLD style using RichUtils
-          newEditorState = RichUtils.toggleInlineStyle(newEditorState, "BOLD");
-        } else {
+          updatedEditorState = RichUtils.toggleInlineStyle(
+            updatedEditorState,
+            "BOLD"
+          );
+        } else if (blockType === "header-one") {
           // Update the block type and text for headers (H1) or other block types
           const newContentState = contentState.merge({
             blockMap: contentState.getBlockMap().set(
@@ -65,17 +87,28 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
           });
 
           // Push the updated content state to the editor state
-          newEditorState = EditorState.push(
-            newEditorState,
+          updatedEditorState = EditorState.push(
+            updatedEditorState,
             newContentState,
             "change-block-type"
+          );
+        } else if (
+          blockType === "RED_COLOR" ||
+          blockType === "UNDERLINE_STYLE"
+        ) {
+          // Apply custom styles using inline style
+          const selection = contentState.getSelectionAfter();
+          updatedEditorState = RichUtils.toggleInlineStyle(
+            updatedEditorState,
+            blockType,
+            selection
           );
         }
       }
     });
 
     // Call the callback function to update the parent component's state
-    onEditorChange(newEditorState);
+    onEditorChange(updatedEditorState);
   };
 
   return (
@@ -84,6 +117,7 @@ const DraftEditor = ({ editorState, onEditorChange, handleKeyCommand }) => {
       onChange={handleEditorChange}
       handleKeyCommand={handleKeyCommand}
       placeholder="Start typing..."
+      customStyleMap={styleMap}
       className="editor"
     />
   );

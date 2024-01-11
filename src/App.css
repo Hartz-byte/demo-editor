@@ -43,3 +43,11 @@
   padding: 10px;
   font-size: 16px;
 }
+
+.red-color {
+  color: red;
+}
+
+.UNDERLINE_STYLE {
+  text-decoration: underline;
+}
