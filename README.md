@@ -11,10 +11,10 @@ A simple React application using Draft.js for rich text editing. This project in
 
 ## How it will work
 
-Typing "# " will convert into Heading (h1)
-Typing "* " will convert into bold text
-Typing "** " will convert the text color to red
-Typing "*** " will convert text style underline
+- Typing "# " will convert into Heading (h1)
+- Typing "* " will convert into bold text
+- Typing "** " will convert the text color to red
+- Typing "*** " will convert text style underline
 
 
 ## Installation
@@ -22,5 +22,5 @@ Typing "*** " will convert text style underline
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/react-draftjs-editor.git
-cd react-draftjs-editor
+git clone https://github.com/Hartz-byte/demo-editor.git
+cd demo-editor
